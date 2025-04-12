@@ -783,10 +783,10 @@ function mod:RenderMenu()
     end
 
     Isaac.RenderText(" Diger Sayfa (X)", baseX + 240, baseY + 100, 1, 1, 0, 1)
-    Isaac.RenderText("Z tusu ile onceki sayfa", baseX + 240, baseY + 120, 1, 1, 0, 1)
+    Isaac.RenderText("Z Onceki Sayfa (Z)", baseX + 240, baseY + 140, 1, 1, 0, 1)
+    Isaac.RenderText("(KREASY TARAFINDAN YAPILMISTIR)", baseX + 220, baseY + 175, 1, 1, 1, 1)
     Isaac.RenderText("C tusu ile al", baseX, baseY + 160, 1, 1, 0, 1)
     Isaac.RenderText("V tusu ile spawn et", baseX, baseY + 180, 1, 1, 0, 1)
-    Isaac.RenderText("Kreasy tarafından yapılmıştır", 10, Game():GetScreenHeight() - 20, 1, 1, 1, 1)
 end
 
 function mod:UpdateInput()
