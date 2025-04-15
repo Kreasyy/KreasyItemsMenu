@@ -143,7 +143,7 @@ local items = {
     {id = CollectibleType.COLLECTIBLE_SCAPULAR, name = "Scapular"},
     {id = CollectibleType.COLLECTIBLE_SPEED_BALL, name = "Speed Ball"},
     {id = CollectibleType.COLLECTIBLE_BUM_FRIEND, name = "Bum Friend"},
-    {id = CollectibleType.COLLECTIBLE_GUPPYS_HEAD, name = "Guapy's Head"},
+    {id = CollectibleType.COLLECTIBLE_GUPPYS_HEAD, name = "Guppy's Head"},
     {id = CollectibleType.COLLECTIBLE_PRAYER_CARD, name = "Prayer Card"},
     {id = CollectibleType.COLLECTIBLE_NOTCHED_AXE, name = "Notched Axe"},
     {id = CollectibleType.COLLECTIBLE_INFESTATION, name = "Infestation"},
@@ -728,8 +728,29 @@ local page = 0
 local selected = 1
 local menuVisible = false
 local lastPressedTime = {}
+local cooldown = 8
 
-local cooldown = 7
+-- Dil ve yardım yazıları
+local currentLanguage = "tr"
+
+local helpTexts = {
+    tr = {
+        nextPage = "X Diger Sayfa (X)",
+        prevPage = "Z Onceki Sayfa (Z)",
+        takeItem = "C tusu ile al",
+        spawnItem = "V tusu ile spawn et",
+        langInfo = "Dil: N = Ingilizce, B = Turkce",
+        maderr = "KREASY TARAFINDAN YAPILDI",
+    },
+    en = {
+        nextPage = "X Next Page (X)",
+        prevPage = "Z Previous Page (Z)",
+        takeItem = "Press C to take",
+        spawnItem = "Press V to spawn",
+        langInfo = "Language: N = English, B = Turkish",
+        maderr = "MADE BY KREASY",
+    }
+}
 
 -- Tuş kodları
 local KEY_0 = Keyboard.KEY_0
@@ -741,25 +762,23 @@ local KEY_X = Keyboard.KEY_X
 local KEY_Z = Keyboard.KEY_Z
 local KEY_C = Keyboard.KEY_C
 local KEY_V = Keyboard.KEY_V
+local KEY_N = Keyboard.KEY_N
+local KEY_B = Keyboard.KEY_B
 
--- Tuş basılma zamanını kontrol etmek için fonksiyon
+-- Tuş kontrol fonksiyonları
 local function canPressKey(key)
     local currentFrame = Game():GetFrameCount()
-    if lastPressedTime[key] == nil then
-        lastPressedTime[key] = 0
-    end
+    if lastPressedTime[key] == nil then lastPressedTime[key] = 0 end
     return currentFrame - lastPressedTime[key] > cooldown
 end
 
--- Tuş basıldığında zaman kaydet
 local function setKeyCooldown(key)
     lastPressedTime[key] = Game():GetFrameCount()
 end
 
+-- Menu çizimi
 function mod:RenderMenu()
-    if not menuVisible then
-        return
-    end
+    if not menuVisible then return end
 
     local baseX, baseY = 60, 60
     local itemsPerPage = 8
@@ -782,20 +801,32 @@ function mod:RenderMenu()
         end
     end
 
-    Isaac.RenderText(" Diger Sayfa (X)", baseX + 240, baseY + 100, 1, 1, 0, 1)
-    Isaac.RenderText("Z Onceki Sayfa (Z)", baseX + 240, baseY + 140, 1, 1, 0, 1)
-    Isaac.RenderText("(KREASY TARAFINDAN YAPILMISTIR)", baseX + 220, baseY + 175, 1, 1, 1, 1)
-    Isaac.RenderText("C tusu ile al", baseX, baseY + 160, 1, 1, 0, 1)
-    Isaac.RenderText("V tusu ile spawn et", baseX, baseY + 180, 1, 1, 0, 1)
+local lang = helpTexts[currentLanguage]
+    Isaac.RenderText(lang.nextPage, baseX + 240, baseY + 120, 1, 1, 0, 1)
+    Isaac.RenderText(lang.prevPage, baseX + 240, baseY + 140, 1, 1, 0, 1)
+    Isaac.RenderText(lang.langInfo, baseX, baseY + 140, 1, 1, 1, 1)
+    Isaac.RenderText(lang.takeItem, baseX, baseY + 160, 1, 1, 0, 1)
+    Isaac.RenderText(lang.spawnItem, baseX, baseY + 180, 1, 1, 0, 1)
+    Isaac.RenderText(lang.maderr, baseX + 220, baseY + 175, 1, 1, 1, 1)
 end
 
+-- Input kontrolü
 function mod:UpdateInput()
     local player = Isaac.GetPlayer(0)
-    local currentFrame = Game():GetFrameCount()
 
+    -- Menu aç/kapat
     if Input.IsButtonPressed(KEY_0, 0) and canPressKey(KEY_0) then
         menuVisible = not menuVisible
         setKeyCooldown(KEY_0)
+    end
+
+    -- Dil değiştir
+    if Input.IsButtonPressed(KEY_N, 0) and canPressKey(KEY_N) then
+        currentLanguage = "en"
+        setKeyCooldown(KEY_N)
+    elseif Input.IsButtonPressed(KEY_B, 0) and canPressKey(KEY_B) then
+        currentLanguage = "tr"
+        setKeyCooldown(KEY_B)
     end
 
     if menuVisible then
