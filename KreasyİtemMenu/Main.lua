@@ -741,6 +741,7 @@ local helpTexts = {
         spawnItem = "V tusu ile spawn et",
         langInfo = "Dil: N = Ingilizce, B = Turkce",
         maderr = "KREASY TARAFINDAN YAPILDI",
+        pageText = "Sayfa"
     },
     en = {
         nextPage = "X Next Page (X)",
@@ -749,6 +750,7 @@ local helpTexts = {
         spawnItem = "Press V to spawn",
         langInfo = "Language: N = English, B = Turkish",
         maderr = "MADE BY KREASY",
+        pageText = "Page"
     }
 }
 
@@ -781,27 +783,30 @@ function mod:RenderMenu()
     if not menuVisible then return end
 
     local baseX, baseY = 60, 60
-    local itemsPerPage = 8
+    local itemsPerPage = 12
     local startIndex = page * itemsPerPage + 1
 
-    for i = 0, 7 do
+    for i = 0, 11 do
         local item = items[startIndex + i]
         if item then
             local col = i % 4
             local row = math.floor(i / 4)
             local x = baseX + col * 110
-            local y = baseY + row * 30
+            local y = baseY + row * 25
             local isSelected = (i + 1 == selected)
 
             if isSelected then
                 Isaac.RenderText("> " .. item.name, x, y, 1, 0, 0, 1)
             else
-                Isaac.RenderText(item.name, x, y, 1, 1, 1, 1)
+                Isaac.RenderText(item.name, x, y, 0.8, 0.8, 0.8, 1)
             end
         end
     end
 
-local lang = helpTexts[currentLanguage]
+    local lang = helpTexts[currentLanguage]
+    local totalPages = math.max(1, math.ceil(#items / itemsPerPage))
+
+    Isaac.RenderText(lang.pageText .. ": " .. (page + 1) .. " / " .. totalPages, baseX, baseY + 100, 1, 1, 1, 1)
     Isaac.RenderText(lang.nextPage, baseX + 240, baseY + 120, 1, 1, 0, 1)
     Isaac.RenderText(lang.prevPage, baseX + 240, baseY + 140, 1, 1, 0, 1)
     Isaac.RenderText(lang.langInfo, baseX, baseY + 140, 1, 1, 1, 1)
@@ -813,14 +818,14 @@ end
 -- Input kontrolü
 function mod:UpdateInput()
     local player = Isaac.GetPlayer(0)
+    local itemsPerPage = 12
+    local maxPage = math.floor((#items - 1) / itemsPerPage)
 
-    -- Menu aç/kapat
     if Input.IsButtonPressed(KEY_0, 0) and canPressKey(KEY_0) then
         menuVisible = not menuVisible
         setKeyCooldown(KEY_0)
     end
 
-    -- Dil değiştir
     if Input.IsButtonPressed(KEY_N, 0) and canPressKey(KEY_N) then
         currentLanguage = "en"
         setKeyCooldown(KEY_N)
@@ -831,7 +836,7 @@ function mod:UpdateInput()
 
     if menuVisible then
         if Input.IsButtonPressed(KEY_DOWN, 0) and canPressKey(KEY_DOWN) then
-            selected = (selected + 4 > 8) and selected or selected + 4
+            selected = (selected + 4 > 12) and selected or selected + 4
             setKeyCooldown(KEY_DOWN)
         elseif Input.IsButtonPressed(KEY_UP, 0) and canPressKey(KEY_UP) then
             selected = (selected - 4 < 1) and selected or selected - 4
@@ -840,25 +845,27 @@ function mod:UpdateInput()
             selected = (selected - 1 < 1) and selected or selected - 1
             setKeyCooldown(KEY_LEFT)
         elseif Input.IsButtonPressed(KEY_RIGHT, 0) and canPressKey(KEY_RIGHT) then
-            selected = (selected + 1 > 8) and selected or selected + 1
+            selected = (selected + 1 > 12) and selected or selected + 1
             setKeyCooldown(KEY_RIGHT)
         elseif Input.IsButtonPressed(KEY_X, 0) and canPressKey(KEY_X) then
-            page = page + 1
-            selected = 1
+            if page < maxPage then
+                page = page + 1
+                selected = 1
+            end
             setKeyCooldown(KEY_X)
         elseif Input.IsButtonPressed(KEY_Z, 0) and canPressKey(KEY_Z) then
             page = math.max(page - 1, 0)
             selected = 1
             setKeyCooldown(KEY_Z)
         elseif Input.IsButtonPressed(KEY_C, 0) and canPressKey(KEY_C) then
-            local index = page * 8 + selected
+            local index = page * 12 + selected
             local item = items[index]
             if item then
                 player:AddCollectible(item.id, 0, true)
             end
             setKeyCooldown(KEY_C)
         elseif Input.IsButtonPressed(KEY_V, 0) and canPressKey(KEY_V) then
-            local index = page * 8 + selected
+            local index = page * 12 + selected
             local item = items[index]
             if item then
                 local pos = player.Position
