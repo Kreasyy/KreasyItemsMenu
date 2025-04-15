@@ -766,6 +766,8 @@ local KEY_C = Keyboard.KEY_C
 local KEY_V = Keyboard.KEY_V
 local KEY_N = Keyboard.KEY_N
 local KEY_B = Keyboard.KEY_B
+local KEY_9 = Keyboard.KEY_9
+local KEY_8 = Keyboard.KEY_8
 
 -- Tuş kontrol fonksiyonları
 local function canPressKey(key)
@@ -807,8 +809,8 @@ function mod:RenderMenu()
     local totalPages = math.max(1, math.ceil(#items / itemsPerPage))
 
     Isaac.RenderText(lang.pageText .. ": " .. (page + 1) .. " / " .. totalPages, baseX, baseY + 100, 1, 1, 1, 1)
-    Isaac.RenderText(lang.nextPage, baseX + 240, baseY + 120, 1, 1, 0, 1)
-    Isaac.RenderText(lang.prevPage, baseX + 240, baseY + 140, 1, 1, 0, 1)
+    Isaac.RenderText(lang.nextPage, baseX + 240, baseY + 140, 1, 1, 0, 1)
+    Isaac.RenderText(lang.prevPage, baseX + 240, baseY + 160, 1, 1, 0, 1)
     Isaac.RenderText(lang.langInfo, baseX, baseY + 140, 1, 1, 1, 1)
     Isaac.RenderText(lang.takeItem, baseX, baseY + 160, 1, 1, 0, 1)
     Isaac.RenderText(lang.spawnItem, baseX, baseY + 180, 1, 1, 0, 1)
@@ -824,6 +826,22 @@ function mod:UpdateInput()
     if Input.IsButtonPressed(KEY_0, 0) and canPressKey(KEY_0) then
         menuVisible = not menuVisible
         setKeyCooldown(KEY_0)
+    end
+
+    -- 9 tuşu sadece menü açıkken kapatsın
+    if Input.IsButtonPressed(KEY_9, 0) and canPressKey(KEY_9) then
+        if menuVisible then
+            menuVisible = false
+            setKeyCooldown(KEY_9)
+        end
+    end
+
+    -- 8 tuşu sadece menü açıkken kapatsın
+    if Input.IsButtonPressed(KEY_8, 0) and canPressKey(KEY_8) then
+        if menuVisible then
+            menuVisible = false
+            setKeyCooldown(KEY_8)
+        end
     end
 
     if Input.IsButtonPressed(KEY_N, 0) and canPressKey(KEY_N) then
@@ -887,3 +905,726 @@ function mod:OnNewRun()
 end
 
 mod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, mod.OnNewRun)
+
+
+local mod = RegisterMod("Kreasy Menu", 1)
+
+local items = {
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_FULL, name = "Red Heart"},
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_HALF, name = "Half Heart"},
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_DOUBLEPACK, name = "Double Pack"},
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_SOUL, name = "Soul Heart"},
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_BLACK, name = "Black Heart"},
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_GOLDEN, name = "Golden Heart"},
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_ETERNAL, name = "Eternal Heart"},
+    {type = "pickup", variant = PickupVariant.PICKUP_HEART, id = HeartSubType.HEART_ROTTEN, name = "Rotten Heart"},
+    
+    -- Anahtarlar
+    {type = "pickup", variant = PickupVariant.PICKUP_KEY, id = KeySubType.KEY_NORMAL, name = "Key"},
+    {type = "pickup", variant = PickupVariant.PICKUP_KEY, id = KeySubType.KEY_GOLDEN, name = "Golden Key"},
+    {type = "pickup", variant = PickupVariant.PICKUP_KEY, id = KeySubType.KEY_CHARGED, name = "Charged Key"},
+
+    
+    -- Bombalar
+    {type = "pickup", variant = PickupVariant.PICKUP_BOMB, id = BombSubType.BOMB_NORMAL, name = "Bomb"},
+    {type = "pickup", variant = PickupVariant.PICKUP_BOMB, id = BombSubType.BOMB_GOLDEN, name = "Golden Bomb"},
+
+    -- Sandıklar
+    {type = "pickup", variant = PickupVariant.PICKUP_LOCKEDCHEST, id = 0, name = "Locked Chest"},
+    {type = "pickup", variant = PickupVariant.PICKUP_CHEST, id = 0, name = "Chest"},
+    {type = "pickup", variant = PickupVariant.PICKUP_BOMBCHEST, id = 0, name = "Bomb Chest"}, 
+    {type = "pickup", variant = PickupVariant.PICKUP_SPIKEDCHEST, id = 0, name = "Spiked Chest"},
+    {type = "pickup", variant = PickupVariant.PICKUP_ETERNALCHEST, id = 0, name = "Eternal Chest"},
+    {type = "pickup", variant = PickupVariant.PICKUP_MIMICCHEST, id = 0, name = "Mimic Chest"},
+
+
+    -- Bataryalar
+    {type = "battery", id = BatterySubType.BATTERY_NORMAL, name = "Battery"},
+    {type = "battery", id = BatterySubType.BATTERY_MEGA, name = "Mega Battery"},
+    {type = "battery", id = BatterySubType.BATTERY_GOLDEN, name = "Golden Battery"},
+
+    -- Kartlar
+    {type = "card", id = Card.CARD_HIGH_PRIESTESS, name = "The High Priestess"},
+    {type = "card", id = Card.CARD_EMPRESS, name = "The Empress"},
+    {type = "card", id = Card.CARD_EMPEROR, name = "The Emperor"},
+    {type = "card", id = Card.CARD_HIEROPHANT, name = "The Hierophant"},
+    {type = "card", id = Card.CARD_LOVERS, name = "The Lovers"},
+    {type = "card", id = Card.CARD_CHARIOT, name = "The Chariot"},
+    {type = "card", id = Card.CARD_HERMIT, name = "The Hermit"},
+    {type = "card", id = Card.CARD_CHAOS, name = "Chaos Card"},
+    {type = "card", id = Card.CARD_CREDIT, name = "Credit Card"},
+    {type = "card", id = Card.CARD_RULES, name = "Rules Card"},
+    {type = "card", id = Card.CARD_HUMANITY, name = "Card Against Humanity"},
+    {type = "card", id = Card.CARD_SUICIDE_KING, name = "Suicide King"},
+    {type = "card", id = Card.CARD_GET_OUT_OF_JAIL, name = "Get Out of Jail Free Card"},
+    {type = "card", id = Card.CARD_QUESTIONMARK, name = "??? Card"},
+    {type = "card", id = Card.CARD_DICE_SHARD, name = "Dice Shard"},
+    {type = "card", id = Card.CARD_EMERGENCY_CONTACT, name = "Emergency Contact"},
+    {type = "card", id = Card.CARD_HOLY, name = "Holy Card"},
+    {type = "card", id = Card.CARD_HUGE_GROWTH, name = "Huge Growth"},
+    {type = "card", id = Card.CARD_ANCIENT_RECALL, name = "Ancient Recall"},
+    {type = "card", id = Card.CARD_ERA_WALK, name = "Era Walk"},
+    {type = "card", id = Card.CARD_REVERSE_FOOL, name = "Reverse Fool"},
+    {type = "card", id = Card.CARD_REVERSE_MAGICIAN, name = "Reverse Magician"},
+    {type = "card", id = Card.CARD_REVERSE_HIGH_PRIESTESS, name = "Reverse High Priestess"},
+    {type = "card", id = Card.CARD_REVERSE_EMPRESS, name = "Reverse Empress"},
+    {type = "card", id = Card.CARD_REVERSE_EMPEROR, name = "Reverse Emperor"},
+    {type = "card", id = Card.CARD_REVERSE_HIEROPHANT, name = "Reverse Hierophant"},
+    {type = "card", id = Card.CARD_REVERSE_LOVERS, name = "Reverse Lovers"},
+    {type = "card", id = Card.CARD_REVERSE_CHARIOT, name = "Reverse Chariot"},
+    {type = "card", id = Card.CARD_REVERSE_JUSTICE, name = "Reverse Justice"},
+    {type = "card", id = Card.CARD_REVERSE_HERMIT, name = "Reverse Hermit"},
+    {type = "card", id = Card.CARD_REVERSE_WHEEL_OF_FORTUNE, name = "Reverse Wheel of Fortune"},
+    {type = "card", id = Card.CARD_REVERSE_STRENGTH, name = "Reverse Strength"},
+    {type = "card", id = Card.CARD_REVERSE_HANGED_MAN, name = "Reverse Hanged Man"},
+    {type = "card", id = Card.CARD_REVERSE_DEATH, name = "Reverse Death"},
+    {type = "card", id = Card.CARD_REVERSE_TEMPERANCE, name = "Reverse Temperance"},
+    {type = "card", id = Card.CARD_REVERSE_DEVIL, name = "Reverse Devil"},
+    {type = "card", id = Card.CARD_REVERSE_TOWER, name = "Reverse Tower"},
+    {type = "card", id = Card.CARD_REVERSE_STARS, name = "Reverse Stars"},
+    {type = "card", id = Card.CARD_REVERSE_MOON, name = "Reverse Moon"},
+    {type = "card", id = Card.CARD_REVERSE_SUN, name = "Reverse Sun"},
+    {type = "card", id = Card.CARD_REVERSE_JUDGEMENT, name = "Reverse Judgement"},
+    {type = "card", id = Card.CARD_REVERSE_WORLD, name = "Reverse World"},
+    {type = "card", id = Card.CARD_CRACKED_KEY, name = "Cracked Key"},
+    {type = "card", id = Card.CARD_QUEEN_OF_HEARTS, name = "Queen of Hearts"},
+    {type = "card", id = Card.CARD_WILD, name = "Wild Card"},
+    {type = "card", id = Card.CARD_SOUL_ISAAC, name = "Soul of Isaac"},
+    {type = "card", id = Card.CARD_SOUL_MAGDALENE, name = "Soul of Magdalene"},
+    {type = "card", id = Card.CARD_SOUL_CAIN, name = "Soul of Cain"},
+    {type = "card", id = Card.CARD_SOUL_JUDAS, name = "Soul of Judas"},
+    {type = "card", id = Card.CARD_SOUL_BLUEBABY, name = "Soul of ???"},
+    {type = "card", id = Card.CARD_SOUL_EVE, name = "Soul of Eve"},
+    {type = "card", id = Card.CARD_SOUL_SAMSON, name = "Soul of Samson"},
+    {type = "card", id = Card.CARD_SOUL_AZAZEL, name = "Soul of Azazel"},
+    {type = "card", id = Card.CARD_SOUL_LAZARUS, name = "Soul of Lazarus"},
+    {type = "card", id = Card.CARD_SOUL_EDEN, name = "Soul of Eden"},
+    {type = "card", id = Card.CARD_SOUL_LOST, name = "Soul of The Lost"},
+    {type = "card", id = Card.CARD_SOUL_LILITH, name = "Soul of Lilith"},
+    {type = "card", id = Card.CARD_SOUL_KEEPER, name = "Soul of The Keeper"},
+    {type = "card", id = Card.CARD_SOUL_APOLLYON, name = "Soul of Apollyon"},
+    {type = "card", id = Card.CARD_SOUL_FORGOTTEN, name = "Soul of The Forgotten"},
+    {type = "card", id = Card.CARD_SOUL_BETHANY, name = "Soul of Bethany"},
+    {type = "card", id = Card.CARD_SOUL_JACOB, name = "Soul of Jacob and Esau"},
+    {type = "card", id = Card.CARD_HANGED_MAN, name = "The Hanged Man"},
+    {type = "card", id = Card.CARD_DEATH, name = "Death"},
+    {type = "card", id = Card.CARD_TEMPERANCE, name = "Temperance"},
+    {type = "card", id = Card.CARD_DEVIL, name = "The Devil"},
+    {type = "card", id = Card.CARD_TOWER, name = "The Tower"},
+    {type = "card", id = Card.CARD_STARS, name = "The Stars"},
+    {type = "card", id = Card.CARD_MOON, name = "The Moon"},
+    {type = "card", id = Card.CARD_SUN, name = "The Sun"},
+    {type = "card", id = Card.CARD_QUEEN_OF_HEARTS, name = "Queen of Hearts"}, -- Bolca kalp
+    {type = "card", id = Card.CARD_RULES, name = "Rules Card"}, -- Rasgele yazı efekti yaratır
+    {type = "card", id = Card.CARD_JUDGEMENT, name = "Judgement"},
+    {type = "card", id = Card.CARD_WORLD, name = "The World"},
+}
+-- Menü ayarları
+local page, selected = 0, 1
+local menuVisible = false
+local lastPressed = {}
+local cooldown = 8
+local lang = "tr"
+
+local helpText = {
+    tr = {
+        nextPage = "X Sonraki Sayfa (X)", prevPage = "Z Onceki Sayfa (Z)",
+        spawn = "V ile yere koy", toggleLang = "Dil: N: Ingilizce  B: Turkce",
+        madeBy = "KREASY TARAFINDAN YAPILDI", page = "Sayfa"
+    },
+    en = {
+        nextPage = "X Next Page (X)", prevPage = "Z Previous Page (Z)",
+        spawn = "Press V to spawn", toggleLang = "Language: N: English  B: Turkish",
+        madeBy = "MADE BY KREASY", page = "Page"
+    }
+}
+
+local function canPress(key)
+    local now = Game():GetFrameCount()
+    return (now - (lastPressed[key] or 0)) > cooldown
+end
+
+local function setPress(key)
+    lastPressed[key] = Game():GetFrameCount()
+end
+
+function mod:RenderMenu()
+    if not menuVisible then return end
+    local baseX, baseY = 60, 60
+    local perPage = 12
+    local start = page * perPage + 1
+
+    for i = 0, 11 do
+        local item = items[start + i]
+        if item then
+            local col = i % 4
+            local row = math.floor(i / 4)
+            local x = baseX + col * 110
+            local y = baseY + row * 25
+            local sel = (i + 1 == selected)
+            local r, g, b = sel and 1 or 0.8, sel and 0 or 0.8, sel and 0 or 0.8
+            Isaac.RenderText((sel and "> " or "  ") .. item.name, x, y, r, g, b, 1)
+        end
+    end
+
+    local t = helpText[lang]
+    local total = math.ceil(#items / perPage)
+    Isaac.RenderText(t.page .. ": " .. (page + 1) .. "/" .. total, baseX, baseY + 110, 1, 1, 1, 1)
+    Isaac.RenderText(t.nextPage, baseX + 240, baseY + 140, 1, 1, 0, 1)
+    Isaac.RenderText(t.prevPage, baseX + 240, baseY + 160, 1, 1, 0, 1)
+    Isaac.RenderText(t.toggleLang, baseX, baseY + 140, 1, 1, 1, 1)
+    Isaac.RenderText(t.spawn, baseX, baseY + 160, 1, 1, 0, 1)
+    Isaac.RenderText(t.madeBy, baseX + 220, baseY + 175, 1, 1, 1, 1)
+end
+
+function mod:UpdateInput()
+    local p = Isaac.GetPlayer(0)
+    local maxPage = math.floor((#items - 1) / 12)
+
+    if Input.IsButtonPressed(Keyboard.KEY_9, 0) and canPress(Keyboard.KEY_9) then
+        menuVisible = not menuVisible
+        setPress(Keyboard.KEY_9)
+    elseif Input.IsButtonPressed(Keyboard.KEY_8, 0) and canPress(Keyboard.KEY_8) then
+        if menuVisible then
+            menuVisible = false
+            setPress(Keyboard.KEY_8)
+        end
+    elseif Input.IsButtonPressed(Keyboard.KEY_0, 0) and canPress(Keyboard.KEY_0) then
+        if menuVisible then
+            menuVisible = false
+            setPress(Keyboard.KEY_0)
+        end
+    end
+
+    if Input.IsButtonPressed(Keyboard.KEY_N, 0) and canPress(Keyboard.KEY_N) then
+        lang = "en"
+        setPress(Keyboard.KEY_N)
+    elseif Input.IsButtonPressed(Keyboard.KEY_B, 0) and canPress(Keyboard.KEY_B) then
+        lang = "tr"
+        setPress(Keyboard.KEY_B)
+    end
+
+    if not menuVisible then return end
+
+    if Input.IsButtonPressed(Keyboard.KEY_DOWN, 0) and canPress(Keyboard.KEY_DOWN) then
+        selected = selected + 4 <= 12 and selected + 4 or selected
+        setPress(Keyboard.KEY_DOWN)
+    elseif Input.IsButtonPressed(Keyboard.KEY_UP, 0) and canPress(Keyboard.KEY_UP) then
+        selected = selected - 4 >= 1 and selected - 4 or selected
+        setPress(Keyboard.KEY_UP)
+    elseif Input.IsButtonPressed(Keyboard.KEY_LEFT, 0) and canPress(Keyboard.KEY_LEFT) then
+        selected = selected > 1 and selected - 1 or selected
+        setPress(Keyboard.KEY_LEFT)
+    elseif Input.IsButtonPressed(Keyboard.KEY_RIGHT, 0) and canPress(Keyboard.KEY_RIGHT) then
+        selected = selected < 12 and selected + 1 or selected
+        setPress(Keyboard.KEY_RIGHT)
+    elseif Input.IsButtonPressed(Keyboard.KEY_X, 0) and canPress(Keyboard.KEY_X) then
+        if page < maxPage then page = page + 1 selected = 1 end
+        setPress(Keyboard.KEY_X)
+    elseif Input.IsButtonPressed(Keyboard.KEY_Z, 0) and canPress(Keyboard.KEY_Z) then
+        page = math.max(0, page - 1) selected = 1
+        setPress(Keyboard.KEY_Z)
+    elseif Input.IsButtonPressed(Keyboard.KEY_V, 0) and canPress(Keyboard.KEY_V) then
+        local idx = page * 12 + selected
+        local item = items[idx]
+        if item then
+            if item.type == "card" then
+                Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_TAROTCARD, item.id, p.Position, Vector(0,0), nil)
+            elseif item.type == "battery" then
+                Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_LIL_BATTERY, item.id, p.Position, Vector(0,0), nil)
+            elseif item.type == "pickup" then
+                Isaac.Spawn(EntityType.ENTITY_PICKUP, item.variant, item.id, p.Position, Vector(0,0), nil)
+            end
+        end
+        setPress(Keyboard.KEY_V)
+    end
+end
+
+function mod:OnNewRun()
+    lastPressed = {}
+    menuVisible = false
+    page = 0
+    selected = 1
+end
+
+mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.UpdateInput)
+mod:AddCallback(ModCallbacks.MC_POST_RENDER, mod.RenderMenu)
+mod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, mod.OnNewRun)
+
+
+
+local mod = RegisterMod("Mob Menu", 1)
+
+local mobMenuVisible = false
+local mobPage = 0
+local mobSelected = 1
+local cooldown = 8
+local lastPressedTime = {}
+
+local currentLang = "tr"
+
+local langText = {
+    tr = {
+        nextPage = "X Diger Sayfa (X)",
+        prevPage = "Z Onceki Sayfa (Z)",
+        spawn = "V tusu ile spawn et",
+        langInfo = "Dil: N = Ingilizce, B = Turkce",
+        madeBy = "KREASY TARAFINDAN YAPILDI",
+        pageText = "Sayfa"
+    },
+    en = {
+        nextPage = "X Next Page (X)",
+        prevPage = "Z Previous Page (Z)",
+        spawn = "Press V to spawn",
+        langInfo = "Language: N = English, B = Turkish",
+        madeBy = "MADE BY KREASY",
+        pageText = "Page"
+    }
+}
+
+local enemies = {
+    {id = EntityType.ENTITY_DUMMY, variant = 0, name = "Dummy"},
+    {id = EntityType.ENTITY_FLY, variant = 0, name = "Fly"},
+    {id = EntityType.ENTITY_ATTACKFLY, variant = 0, name = "Attack Fly"},
+    {id = EntityType.ENTITY_POOTER, variant = 0, name = "Pooter"},
+    {id = EntityType.ENTITY_CLOTTY, variant = 0, name = "Clotty"},
+    {id = EntityType.ENTITY_HOST, variant = 0, name = "Host"},
+    {id = EntityType.ENTITY_GAPER, variant = 0, name = "Gaper"},
+    {id = EntityType.ENTITY_GUSHER, variant = 0, name = "Gusher"},
+    {id = EntityType.ENTITY_HORF, variant = 0, name = "Horf"},
+    {id = EntityType.ENTITY_LEAPER, variant = 0, name = "Leaper"},
+    {id = EntityType.ENTITY_MAW, variant = 0, name = "Maw"},
+    {id = EntityType.ENTITY_HOPPER, variant = 0, name = "Hopper"},
+    {id = EntityType.ENTITY_BOOMFLY, variant = 0, name = "Boom Fly"},
+    {id = EntityType.ENTITY_SPIDER, variant = 0, name = "Spider"},
+    {id = EntityType.ENTITY_SWARM, variant = 0, name = "Swarm"},
+    {id = EntityType.ENTITY_FIREPLACE, variant = 0, name = "Fire Place"},
+    {id = EntityType.ENTITY_MONSTRO, variant = 0, name = "Monstro"},
+    {id = EntityType.ENTITY_MONSTRO2, variant = 0, name = "Monstro II"},
+    {id = EntityType.ENTITY_GURDY, variant = 0, name = "Gurdy"},
+    {id = EntityType.ENTITY_GURDY_JR, variant = 0, name = "Gurdy Jr"},
+    {id = EntityType.ENTITY_PIN, variant = 0, name = "Pin"},
+    {id = EntityType.ENTITY_CHUB, variant = 0, name = "Chub"},
+    {id = EntityType.ENTITY_DUKE, variant = 0, name = "Duke of Flies"},
+    {id = EntityType.ENTITY_PEEP, variant = 0, name = "Peep"},
+    {id = EntityType.ENTITY_LOKI, variant = 0, name = "Loki"},
+    {id = EntityType.ENTITY_MOMS_HEART, variant = 0, name = "Mom's Heart"},
+    {id = EntityType.ENTITY_ISAAC, variant = 0, name = "Isaac"},
+    {id = EntityType.ENTITY_SATAN, variant = 0, name = "Satan"},
+    {id = EntityType.ENTITY_THE_HAUNT, variant = 0, name = "The Haunt"},
+    {id = EntityType.ENTITY_LITTLE_HORN, variant = 0, name = "Little Horn"},
+    {id = EntityType.ENTITY_BIG_HORN, variant = 0, name = "Big Horn"},
+    {id = EntityType.ENTITY_MEGA_MAW, variant = 0, name = "Mega Maw"},
+    {id = EntityType.ENTITY_MEGA_FATTY, variant = 0, name = "Mega Fatty"},
+    {id = EntityType.ENTITY_DARK_ONE, variant = 0, name = "Dark One"},
+    {id = EntityType.ENTITY_ADVERSARY, variant = 0, name = "Adversary"},
+    {id = EntityType.ENTITY_POLYCEPHALUS, variant = 0, name = "Polycephalus"},
+    {id = EntityType.ENTITY_MR_FRED, variant = 0, name = "Mr. Fred"},
+    {id = EntityType.ENTITY_CAGE, variant = 0, name = "The Cage"},
+    {id = EntityType.ENTITY_MAMA_GURDY, variant = 0, name = "Mama Gurdy"},
+    {id = EntityType.ENTITY_WAR, variant = 0, name = "War"},
+    {id = EntityType.ENTITY_FAMINE, variant = 0, name = "Famine"},
+    {id = EntityType.ENTITY_PESTILENCE, variant = 0, name = "Pestilence"},
+    {id = EntityType.ENTITY_DEATH, variant = 0, name = "Death"},
+    {id = EntityType.ENTITY_RAG_MAN, variant = 0, name = "Rag Man"},
+    {id = EntityType.ENTITY_FORSAKEN, variant = 0, name = "The Forsaken"},
+    {id = EntityType.ENTITY_BROWNIE, variant = 0, name = "Brownie"},
+    {id = EntityType.ENTITY_SISTERS_VIS, variant = 0, name = "Sisters Vis"},
+    {id = EntityType.ENTITY_GATE, variant = 0, name = "The Gate"},
+    {id = EntityType.ENTITY_STAIN, variant = 0, name = "The Stain"},
+    {id = EntityType.ENTITY_RAG_MEGA, variant = 0, name = "Rag Mega"},
+    {id = EntityType.ENTITY_ULTRA_PRIDE, variant = 0, name = "Ultra Pride"},
+    {id = EntityType.ENTITY_ULTRA_GREED, variant = 0, name = "Ultra Greed"},
+    {id = EntityType.ENTITY_HUSH, variant = 0, name = "Hush"},
+    {id = EntityType.ENTITY_DELIRIUM, variant = 0, name = "Delirium"},
+    {id = EntityType.ENTITY_DOGMA, variant = 0, name = "Dogma"},
+    {id = EntityType.ENTITY_BEAST, variant = 0, name = "The Beast"},
+    {id = EntityType.ENTITY_MOTHER, variant = 0, name = "Mother"},
+    {id = EntityType.ENTITY_ROTGUT, variant = 0, name = "Rotgut"},
+    {id = EntityType.ENTITY_SCOURGE, variant = 0, name = "The Scourge"},
+    {id = EntityType.ENTITY_SIREN, variant = 0, name = "The Siren"},
+    {id = EntityType.ENTITY_MIN_MIN, variant = 0, name = "Min Min"},
+    {id = EntityType.ENTITY_BUMBINO, variant = 0, name = "Bumbino"},
+    {id = EntityType.ENTITY_COLOSTOMIA, variant = 0, name = "Colostomia"},
+    {id = EntityType.ENTITY_HERETIC, variant = 0, name = "The Heretic"},
+    {id = EntityType.ENTITY_CADAVRA, variant = 0, name = "Cadavra"},
+    {id = EntityType.ENTITY_CLOG, variant = 0, name = "Clog"},
+    {id = EntityType.ENTITY_RAGLICH, variant = 0, name = "Raglich"},
+    {id = EntityType.ENTITY_TURDLET, variant = 0, name = "Turdlet"},
+    {id = EntityType.ENTITY_SINGE, variant = 0, name = "Singe"},
+    {id = EntityType.ENTITY_FALLEN, variant = 0, name = "The Fallen"},
+    {id = EntityType.ENTITY_HEADLESS_HORSEMAN, variant = 0, name = "Headless Horseman"},
+    {id = EntityType.ENTITY_THE_LAMB, variant = 0, name = "The Lamb"},
+    {id = EntityType.ENTITY_MEGA_SATAN, variant = 0, name = "Mega Satan"},
+    {id = EntityType.ENTITY_MINISTRO, variant = 0, name = "Ministro"},
+    {id = EntityType.ENTITY_FISTULOID, variant = 0, name = "Fistuloid"},
+    {id = EntityType.ENTITY_PORTAL, variant = 0, name = "Portal"},
+    {id = EntityType.ENTITY_GIDEON, variant = 0, name = "Gideon"},
+    {id = EntityType.ENTITY_LIL_BLUB, variant = 0, name = "Lil Blub"},
+    {id = EntityType.ENTITY_RAINMAKER, variant = 0, name = "Rainmaker"},
+    {id = EntityType.ENTITY_REAP_CREEP, variant = 0, name = "Reap Creep"},
+    {id = EntityType.ENTITY_VISAGE, variant = 0, name = "Visage"},
+    {id = EntityType.ENTITY_CHIMERA, variant = 0, name = "Chimera"},
+    {id = EntityType.ENTITY_SCOURGE, variant = 0, name = "The Scourge"},
+    {id = EntityType.ENTITY_ROTGUT, variant = 0, name = "Rotgut"},
+    {id = EntityType.ENTITY_MOTHER, variant = 0, name = "Mother"},
+    {id = EntityType.ENTITY_BEAST, variant = 0, name = "The Beast"},
+    {id = EntityType.ENTITY_DOGMA, variant = 0, name = "Dogma"},
+    {id = EntityType.ENTITY_CLOG, variant = 0, name = "Clog"},
+    {id = EntityType.ENTITY_MIN_MIN, variant = 0, name = "Min Min"},
+    {id = EntityType.ENTITY_SINGE, variant = 0, name = "Singe"},
+    {id = EntityType.ENTITY_BUMBINO, variant = 0, name = "Bumbino"},
+    {id = EntityType.ENTITY_COLOSTOMIA, variant = 0, name = "Colostomia"},
+    {id = EntityType.ENTITY_TURDLET, variant = 0, name = "Turdlet"},
+    {id = EntityType.ENTITY_RAGLICH, variant = 0, name = "Raglich"},
+    {id = EntityType.ENTITY_HERETIC, variant = 0, name = "The Heretic"},
+    {id = EntityType.ENTITY_SIREN, variant = 0, name = "The Siren"},
+    {id = EntityType.ENTITY_CLUTCH, variant = 0, name = "Clutch"},
+    {id = EntityType.ENTITY_CADAVRA, variant = 0, name = "Cadavra"},
+    {id = EntityType.ENTITY_HORNY_BOYS, variant = 0, name = "Horny Boys"},
+    {id = EntityType.ENTITY_RAG_MAN, variant = 0, name = "Rag Man"},
+    {id = EntityType.ENTITY_RAG_MEGA, variant = 0, name = "Rag Mega"},
+    {id = EntityType.ENTITY_WIDOW, variant = 0, name = "The Widow"},
+    {id = EntityType.ENTITY_DADDYLONGLEGS, variant = 0, name = "Daddy Long Legs"},
+    {id = EntityType.ENTITY_MATRIARCH, variant = 0, name = "The Matriarch"},
+    {id = EntityType.ENTITY_BLUBBER, variant = 0, name = "Blubber"},
+    {id = EntityType.ENTITY_MEGA_CLOTTY, variant = 0, name = "Mega Clotty"},
+    {id = EntityType.ENTITY_MAZE_ROAMER, variant = 0, name = "Maze Roamer"},
+    {id = EntityType.ENTITY_EXORCIST, variant = 0, name = "Exorcist"},
+    {id = EntityType.ENTITY_NEEDLE, variant = 0, name = "Needle"},
+    {id = EntityType.ENTITY_GOAT, variant = 0, name = "Goat"},
+    {id = EntityType.ENTITY_CULTIST, variant = 0, name = "Cultist"},
+    {id = EntityType.ENTITY_DUMP, variant = 0, name = "Dump"},
+    {id = EntityType.ENTITY_SPLURT, variant = 0, name = "Splurt"},
+    {id = EntityType.ENTITY_STRIDER, variant = 0, name = "Strider"},
+    {id = EntityType.ENTITY_WRAITH, variant = 0, name = "Wraith"},
+    {id = EntityType.ENTITY_WILLO, variant = 0, name = "Willo"},
+    {id = EntityType.ENTITY_VIS_FATTY, variant = 0, name = "Vis Fatty"},
+    {id = EntityType.ENTITY_BISHOP, variant = 0, name = "Bishop"},
+    {id = EntityType.ENTITY_QUAKE_GRIMACE, variant = 0, name = "Quake Grimace"},
+    {id = EntityType.ENTITY_FACELESS, variant = 0, name = "Faceless"},
+    {id = EntityType.ENTITY_EVIS, variant = 0, name = "Evis"},
+    {id = EntityType.ENTITY_MOTHERS_SHADOW, variant = 0, name = "Mother's Shadow"},
+    {id = EntityType.ENTITY_MOCKULUS, variant = 0, name = "Mockulus"},
+    {id = EntityType.ENTITY_GRUDGE, variant = 0, name = "Grudge"},
+    {id = EntityType.ENTITY_BLOATY, variant = 0, name = "Bloaty"},
+    {id = EntityType.ENTITY_SHADY, variant = 0, name = "Shady"},
+    {id = EntityType.ENTITY_WHIPPER, variant = 0, name = "Whipper"},
+    {id = EntityType.ENTITY_CANDLER, variant = 0, name = "Candler"},
+    {id = EntityType.ENTITY_DANNY, variant = 0, name = "Danny"},
+    {id = EntityType.ENTITY_VIS_VERSA, variant = 0, name = "Vis Versa"},
+    {id = EntityType.ENTITY_CLICKETY_CLACK, variant = 0, name = "Clickety Clack"},
+    {id = EntityType.ENTITY_BONE_KNIGHT, variant = 0, name = "Bone Knight"},
+    {id = EntityType.ENTITY_CYCLOPIA, variant = 0, name = "Cyclopia"},
+    {id = EntityType.ENTITY_RED_GHOST, variant = 0, name = "Red Ghost"},
+    {id = EntityType.ENTITY_HENRY, variant = 0, name = "Henry"},
+    {id = EntityType.ENTITY_GUTTED_FATTY, variant = 0, name = "Gutted Fatty"},
+    {id = EntityType.ENTITY_FLOATING_KNIGHT, variant = 0, name = "Floating Knight"},
+    {id = EntityType.ENTITY_FLOATING_HOST, variant = 0, name = "Floating Host"},
+    {id = EntityType.ENTITY_PUSTULE, variant = 0, name = "Pustule"},
+    {id = EntityType.ENTITY_CYST, variant = 0, name = "Cyst"},
+    {id = EntityType.ENTITY_FLESH_MAIDEN, variant = 0, name = "Flesh Maiden"},
+    {id = EntityType.ENTITY_ARMYFLY, variant = 0, name = "Army Fly"},
+    {id = EntityType.ENTITY_FLY_TRAP, variant = 0, name = "Fly Trap"},
+    {id = EntityType.ENTITY_TICKING_SPIDER, variant = 0, name = "Ticking Spider"},
+    {id = EntityType.ENTITY_BLACK_MAW, variant = 0, name = "Black Maw"},
+    {id = EntityType.ENTITY_BLOOD_PUPPY, variant = 0, name = "Blood Puppy"},
+    {id = EntityType.ENTITY_PEEPER_FATTY, variant = 0, name = "Peeper Fatty"},
+    {id = EntityType.ENTITY_COHORT, variant = 0, name = "Cohort"},
+    {id = EntityType.ENTITY_FARTIGAN, variant = 0, name = "Fartigan"},
+    {id = EntityType.ENTITY_FIRE_WORM, variant = 0, name = "Fire Worm"},
+    {id = EntityType.ENTITY_QUAKEY, variant = 0, name = "Quakey"},
+    {id = EntityType.ENTITY_GYRO, variant = 0, name = "Gyro"},
+    {id = EntityType.ENTITY_BOUNCER, variant = 0, name = "Bouncer"},
+    {id = EntityType.ENTITY_BLURB, variant = 0, name = "Blurb"},
+    {id = EntityType.ENTITY_FISSURE, variant = 0, name = "Fissure"},
+    {id = EntityType.ENTITY_POLTY, variant = 0, name = "Polty"},
+    {id = EntityType.ENTITY_PREY, variant = 0, name = "Prey"},
+    {id = EntityType.ENTITY_ROCK_SPIDER, variant = 0, name = "Rock Spider"},
+    {id = EntityType.ENTITY_FLY_BOMB, variant = 0, name = "Fly Bomb"},
+    {id = EntityType.ENTITY_BOMBGAGGER, variant = 0, name = "Bombgagger"},
+    {id = EntityType.ENTITY_MOLE, variant = 0, name = "Mole"},
+    {id = EntityType.ENTITY_BONY, variant = 0, name = "Bony"},
+    {id = EntityType.ENTITY_BLACK_BONY, variant = 0, name = "Black Bony"},
+    {id = EntityType.ENTITY_BLACK_GLOBIN, variant = 0, name = "Black Globin"},
+    {id = EntityType.ENTITY_BLACK_GLOBIN_HEAD, variant = 0, name = "Black Globin Head"},
+    {id = EntityType.ENTITY_BLACK_GLOBIN_BODY, variant = 0, name = "Black Globin Body"},
+    {id = EntityType.ENTITY_HOMUNCULUS, variant = 0, name = "Homunculus"},
+    {id = EntityType.ENTITY_TUMOR, variant = 0, name = "Tumor"},
+    {id = EntityType.ENTITY_MRMAW, variant = 0, name = "Mr. Maw"},
+    {id = EntityType.ENTITY_BRAIN, variant = 0, name = "Brain"},
+    {id = EntityType.ENTITY_MEMBRAIN, variant = 0, name = "Membrain"},
+    {id = EntityType.ENTITY_SKINNY, variant = 0, name = "Skinny"},
+    {id = EntityType.ENTITY_GAPING_MAW, variant = 0, name = "Gaping Maw"},
+    {id = EntityType.ENTITY_BROKEN_GAPING_MAW, variant = 0, name = "Broken Gaping Maw"},
+    {id = EntityType.ENTITY_DART_FLY, variant = 0, name = "Dart Fly"},
+    {id = EntityType.ENTITY_CONJOINED_SPITTY, variant = 0, name = "Conjoined Spitty"},
+    {id = EntityType.ENTITY_CONJOINED_FATTY, variant = 0, name = "Conjoined Fatty"},
+    {id = EntityType.ENTITY_FAT_BAT, variant = 0, name = "Fat Bat"},
+    {id = EntityType.ENTITY_IMP, variant = 0, name = "Imp"},
+    {id = EntityType.ENTITY_GURGLE, variant = 0, name = "Gurgle"},
+    {id = EntityType.ENTITY_BUTTLICKER, variant = 0, name = "Buttlicker"},
+    {id = EntityType.ENTITY_HANGER, variant = 0, name = "Hanger"},
+    {id = EntityType.ENTITY_SWARMER, variant = 0, name = "Swarmer"},
+    {id = EntityType.ENTITY_BIGSPIDER, variant = 0, name = "Big Spider"},
+    {id = EntityType.ENTITY_ETERNALFLY, variant = 0, name = "Eternal Fly"},
+    {id = EntityType.ENTITY_BEGOTTEN, variant = 0, name = "Begotten"},
+    {id = EntityType.ENTITY_BABY_BEGOTTEN, variant = 0, name = "Baby Begotten"},
+    {id = EntityType.ENTITY_SWARM_SPIDER, variant = 0, name = "Swarm Spider"},
+    {id = EntityType.ENTITY_DUST, variant = 0, name = "Dust"},
+    {id = EntityType.ENTITY_DUSTY_DEATHS_HEAD, variant = 0, name = "Dusty Death's Head"},
+    {id = EntityType.ENTITY_NULLS, variant = 0, name = "Nulls"},
+    {id = EntityType.ENTITY_NIGHT_CRAWLER, variant = 0, name = "Night Crawler"},
+    {id = EntityType.ENTITY_SUB_HORF, variant = 0, name = "Sub Horf"},
+    {id = EntityType.ENTITY_SPLASHER, variant = 0, name = "Splasher"},
+    {id = EntityType.ENTITY_GRUB, variant = 0, name = "Grub"},
+    {id = EntityType.ENTITY_WALL_CREEP, variant = 0, name = "Wall Creep"},
+    {id = EntityType.ENTITY_RAGE_CREEP, variant = 0, name = "Rage Creep"},
+    {id = EntityType.ENTITY_BLIND_CREEP, variant = 0, name = "Blind Creep"},
+    {id = EntityType.ENTITY_ROUND_WORM, variant = 0, name = "Round Worm"},
+    {id = EntityType.ENTITY_POOP, variant = 0, name = "Poop"},
+    {id = EntityType.ENTITY_RAGLING, variant = 0, name = "Ragling"},
+    {id = EntityType.ENTITY_FLESH_MOBILE_HOST, variant = 0, name = "Flesh Mobile Host"},
+    {id = EntityType.ENTITY_PSY_HORF, variant = 0, name = "Psy Horf"},
+    {id = EntityType.ENTITY_FULL_FLY, variant = 0, name = "Full Fly"},
+    {id = EntityType.ENTITY_ONE_TOOTH, variant = 0, name = "One Tooth"},
+    {id = EntityType.ENTITY_SKINBALL, variant = 0, name = "Skinball"},
+    {id = EntityType.ENTITY_NERVE_ENDING, variant = 0, name = "Nerve Ending"},
+    {id = EntityType.ENTITY_CAMILLO_JR, variant = 0, name = "Camillo Jr"},
+    {id = EntityType.ENTITY_SUCKER, variant = 0, name = "Sucker"},
+    {id = EntityType.ENTITY_EYE, variant = 0, name = "Eye"},
+    {id = EntityType.ENTITY_LUMP, variant = 0, name = "Lump"},
+    {id = EntityType.ENTITY_LEECH, variant = 0, name = "Leech"},
+    {id = EntityType.ENTITY_FLAMINGHOPPER, variant = 0, name = "Flaming Hopper"},
+    {id = EntityType.ENTITY_PARA_BITE, variant = 0, name = "Para-Bite"},
+    {id = EntityType.ENTITY_FRED, variant = 0, name = "Fred"},
+    {id = EntityType.ENTITY_SLOTH, variant = 0, name = "Sloth"},
+    {id = EntityType.ENTITY_LUST, variant = 0, name = "Lust"},
+    {id = EntityType.ENTITY_WRATH, variant = 0, name = "Wrath"},
+    {id = EntityType.ENTITY_GLUTTONY, variant = 0, name = "Gluttony"},
+    {id = EntityType.ENTITY_GREED, variant = 0, name = "Greed"},
+    {id = EntityType.ENTITY_ENVY, variant = 0, name = "Envy"},
+    {id = EntityType.ENTITY_PRIDE, variant = 0, name = "Pride"},
+    {id = EntityType.ENTITY_DOPLE, variant = 0, name = "Dople"},
+    {id = EntityType.ENTITY_MAGGOT, variant = 0, name = "Maggot"},
+    {id = EntityType.ENTITY_HIVE, variant = 0, name = "Hive"},
+    {id = EntityType.ENTITY_CHARGER, variant = 0, name = "Charger"},
+    {id = EntityType.ENTITY_GLOBIN, variant = 0, name = "Globin"},
+    {id = EntityType.ENTITY_BOIL, variant = 0, name = "Boil"},
+    {id = EntityType.ENTITY_SPITTY, variant = 0, name = "Spitty"},
+    {id = EntityType.ENTITY_GUTS, variant = 0, name = "Guts"},
+    {id = EntityType.ENTITY_KNIGHT, variant = 0, name = "Knight"},
+    {id = EntityType.ENTITY_STONEHEAD, variant = 0, name = "Stone Head"},
+    {id = EntityType.ENTITY_POKY, variant = 0, name = "Poky"},
+    {id = EntityType.ENTITY_MOM, variant = 0, name = "Mom"},
+    {id = EntityType.ENTITY_MOMS_HAND, variant = 0, name = "Mom's Hand"},
+    {id = EntityType.ENTITY_MOM_HEAD, variant = 0, name = "Mom's Head"},
+    {id = EntityType.ENTITY_HEART, variant = 0, name = "Heart"},
+    {id = EntityType.ENTITY_MASK, variant = 0, name = "Mask"},
+    {id = EntityType.ENTITY_MASK_OF_INFAMY, variant = 0, name = "Mask of Infamy"},
+    {id = EntityType.ENTITY_HEART_OF_INFAMY, variant = 0, name = "Heart of Infamy"},
+    {id = EntityType.ENTITY_GEMINI, variant = 0, name = "Gemini"},
+    {id = EntityType.ENTITY_FAT_SACK, variant = 0, name = "Fat Sack"},
+    {id = EntityType.ENTITY_HALF_SACK, variant = 0, name = "Half Sack"},
+    {id = EntityType.ENTITY_DEATHS_HEAD, variant = 0, name = "Death's Head"},
+    {id = EntityType.ENTITY_BABY_LONG_LEGS, variant = 0, name = "Baby Long Legs"},
+    {id = EntityType.ENTITY_CRAZY_LONG_LEGS, variant = 0, name = "Crazy Long Legs"},
+    {id = EntityType.ENTITY_NEST, variant = 0, name = "Nest"},
+    {id = EntityType.ENTITY_BABY, variant = 0, name = "Baby"},
+    {id = EntityType.ENTITY_VIS, variant = 0, name = "Vis"},
+    {id = EntityType.ENTITY_BABY_PLUM, variant = 0, name = "Baby Plum"},
+    {id = EntityType.ENTITY_STONE_EYE, variant = 0, name = "Stone Eye"},
+    {id = EntityType.ENTITY_CONSTANT_STONE_SHOOTER, variant = 0, name = "Constant Stone Shooter"},
+    {id = EntityType.ENTITY_BRIMSTONE_HEAD, variant = 0, name = "Brimstone Head"},
+    {id = EntityType.ENTITY_MOBILE_HOST, variant = 0, name = "Mobile Host"},
+    {id = EntityType.ENTITY_KEEPER, variant = 0, name = "Keeper"},
+    {id = EntityType.ENTITY_VISAGE, variant = 0, name = "Visage"},
+    {id = EntityType.ENTITY_ULTRA_COIN, variant = 0, name = "Ultra Coin"},
+    {id = EntityType.ENTITY_ULTRA_DOOR, variant = 0, name = "Ultra Door"},
+    {id = EntityType.ENTITY_ULTRA_GREED, variant = 0, name = "Ultra Greed"},
+    {id = EntityType.ENTITY_ULTRA_PRIDE, variant = 0, name = "Ultra Pride"},
+    {id = EntityType.ENTITY_MOMS_DEAD_HAND, variant = 0, name = "Mom's Dead Hand"},
+    {id = EntityType.ENTITY_MR_MINE, variant = 0, name = "Mr. Mine"},
+    {id = EntityType.ENTITY_CORN_MINE, variant = 0, name = "Corn Mine"},
+    {id = EntityType.ENTITY_POISON_MIND, variant = 0, name = "Poison Mind"},
+    {id = EntityType.ENTITY_STONEY, variant = 0, name = "Stoney"},
+    {id = EntityType.ENTITY_BLISTER, variant = 0, name = "Blister"},
+    {id = EntityType.ENTITY_THE_THING, variant = 0, name = "The Thing"},
+    {id = EntityType.ENTITY_TARBOY, variant = 0, name = "Tarboy"},
+    {id = EntityType.ENTITY_GUSH, variant = 0, name = "Gush"},
+    {id = EntityType.ENTITY_LEPER, variant = 0, name = "Leper"},
+    {id = EntityType.ENTITY_PROP, variant = 0, name = "Generic Prop"},
+    {id = EntityType.ENTITY_TRIGGER_OUTPUT, variant = 0, name = "Trigger Output"},
+    {id = EntityType.ENTITY_ENVIRONMENT, variant = 0, name = "Environment"},
+    {id = EntityType.ENTITY_HORNFEL, variant = 0, name = "Hornfel"},
+    {id = EntityType.ENTITY_HORNFEL_DOOR, variant = 0, name = "Hornfel Door"},
+    {id = EntityType.ENTITY_SIREN_HELPER, variant = 0, name = "Siren Helper"},
+    {id = EntityType.ENTITY_MINECART, variant = 0, name = "Minecart"},
+    {id = EntityType.ENTITY_FROZEN_ENEMY, variant = 0, name = "Frozen Enemy"},
+    {id = EntityType.ENTITY_WIZOOB, variant = 0, name = "Wizoob"},
+    {id = EntityType.ENTITY_SQUIRT, variant = 0, name = "Squirt"},
+    {id = EntityType.ENTITY_COD_WORM, variant = 0, name = "Cod Worm"},
+    {id = EntityType.ENTITY_RING_OF_FLIES, variant = 0, name = "Ring of Flies"},
+    {id = EntityType.ENTITY_DINGA, variant = 0, name = "Dinga"},
+    {id = EntityType.ENTITY_OOB, variant = 0, name = "OOB"},
+    {id = EntityType.ENTITY_SKINBALL, variant = 0, name = "Skinball"},
+    {id = EntityType.ENTITY_GAPING_MAW, variant = 0, name = "Gaping Maw"},
+    {id = EntityType.ENTITY_FIREPLACE, variant = 0, name = "Fireplace"},
+    {id = EntityType.ENTITY_VIS, variant = 0, name = "Vıs"},
+}
+
+local function canPressKey(key)
+    local frame = Game():GetFrameCount()
+    return (lastPressedTime[key] == nil or frame - lastPressedTime[key] > cooldown)
+end
+
+local function setKeyCooldown(key)
+    lastPressedTime[key] = Game():GetFrameCount()
+end
+
+function mod:RenderMobMenu()
+    if not mobMenuVisible then return end
+
+    local lang = langText[currentLang]
+
+    local baseX = 60
+    local baseY = 60
+    local perPage = 9
+    local rowSpacing = 20
+    local colSpacing = 160
+    local start = mobPage * perPage + 1
+
+    for i = 0, perPage - 1 do
+        local idx = start + i
+        local enemy = enemies[idx]
+        local col = i % 3
+        local row = math.floor(i / 3)
+        local x = baseX + col * colSpacing
+        local y = baseY + row * rowSpacing
+        local sel = (i + 1 == mobSelected)
+        local r, g, b = sel and 1 or 0.8, sel and 0 or 0.8, sel and 0 or 0.8
+
+        local name = enemy and enemy.name or "---"
+        Isaac.RenderText((sel and "> " or "  ") .. name, x, y, r, g, b, 1)
+    end
+
+    local totalPages = math.ceil(#enemies / perPage)
+    Isaac.RenderText(lang.pageText .. ": " .. (mobPage + 1) .. "/" .. totalPages, baseX, baseY + 110, 1, 1, 1, 1)
+    Isaac.RenderText(lang.nextPage, baseX + 240, baseY + 140, 1, 1, 0, 1)
+    Isaac.RenderText(lang.prevPage, baseX + 240, baseY + 160, 1, 1, 0, 1)
+    Isaac.RenderText(lang.langInfo, baseX, baseY + 140, 1, 1, 1, 1)
+    Isaac.RenderText(lang.spawn, baseX, baseY + 160, 1, 1, 0, 1)
+    Isaac.RenderText(lang.madeBy, baseX + 220, baseY + 175, 1, 1, 1, 1)
+end
+
+function mod:UpdateMobMenuInput()
+    local player = Isaac.GetPlayer(0)
+    if not player or player:IsDead() then return end
+
+    local perPage = 9
+    local maxPage = math.floor((#enemies - 1) / perPage)
+
+    -- Menü açma / kapama
+    if Input.IsButtonPressed(Keyboard.KEY_8, 0) and canPressKey(Keyboard.KEY_8) then
+        mobMenuVisible = not mobMenuVisible
+        setKeyCooldown(Keyboard.KEY_8)
+    end
+    if Input.IsButtonPressed(Keyboard.KEY_9, 0) and canPressKey(Keyboard.KEY_9) then
+        mobMenuVisible = false
+        setKeyCooldown(Keyboard.KEY_9)
+    end
+    if Input.IsButtonPressed(Keyboard.KEY_0, 0) and canPressKey(Keyboard.KEY_0) then
+        mobMenuVisible = false
+        setKeyCooldown(Keyboard.KEY_0)
+    end
+    if not mobMenuVisible then return end
+
+    -- Yön tuşları
+    if Input.IsButtonPressed(Keyboard.KEY_DOWN, 0) and canPressKey(Keyboard.KEY_DOWN) then
+        if mobSelected + 3 <= perPage then mobSelected = mobSelected + 3 end
+        setKeyCooldown(Keyboard.KEY_DOWN)
+    elseif Input.IsButtonPressed(Keyboard.KEY_UP, 0) and canPressKey(Keyboard.KEY_UP) then
+        if mobSelected - 3 >= 1 then mobSelected = mobSelected - 3 end
+        setKeyCooldown(Keyboard.KEY_UP)
+    elseif Input.IsButtonPressed(Keyboard.KEY_LEFT, 0) and canPressKey(Keyboard.KEY_LEFT) then
+        if mobSelected > 1 then mobSelected = mobSelected - 1 end
+        setKeyCooldown(Keyboard.KEY_LEFT)
+    elseif Input.IsButtonPressed(Keyboard.KEY_RIGHT, 0) and canPressKey(Keyboard.KEY_RIGHT) then
+        if mobSelected < perPage and (mobPage * perPage + mobSelected + 1 <= #enemies) then
+            mobSelected = mobSelected + 1
+        end
+        setKeyCooldown(Keyboard.KEY_RIGHT)
+    elseif Input.IsButtonPressed(Keyboard.KEY_X, 0) and canPressKey(Keyboard.KEY_X) then
+        if mobPage < maxPage then
+            mobPage = mobPage + 1
+            mobSelected = 1
+        end
+        setKeyCooldown(Keyboard.KEY_X)
+    elseif Input.IsButtonPressed(Keyboard.KEY_Z, 0) and canPressKey(Keyboard.KEY_Z) then
+        if mobPage > 0 then
+            mobPage = mobPage - 1
+            mobSelected = 1
+        end
+        setKeyCooldown(Keyboard.KEY_Z)
+    elseif Input.IsButtonPressed(Keyboard.KEY_V, 0) and canPressKey(Keyboard.KEY_V) then
+        local idx = mobPage * perPage + mobSelected
+        local enemy = enemies[idx]
+        if enemy then
+            Isaac.Spawn(enemy.id, enemy.variant, 0, player.Position, Vector(0, 0), nil)
+        end
+        setKeyCooldown(Keyboard.KEY_V)
+    elseif Input.IsButtonPressed(Keyboard.KEY_N, 0) and canPressKey(Keyboard.KEY_N) then
+        currentLang = "en"
+        setKeyCooldown(Keyboard.KEY_N)
+    elseif Input.IsButtonPressed(Keyboard.KEY_B, 0) and canPressKey(Keyboard.KEY_B) then
+        currentLang = "tr"
+        setKeyCooldown(Keyboard.KEY_B)
+    end
+end
+
+mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function(_, isContinued)
+    mobMenuVisible = false
+    mobPage = 0
+    mobSelected = 1
+    lastPressedTime = {}
+end)
+
+mod:AddCallback(ModCallbacks.MC_POST_RENDER, mod.RenderMobMenu)
+mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.UpdateMobMenuInput)
+
+
+
+-- Kreasy Tarafından Düzenlenmiştir
+local MyMod = RegisterMod("SimpleHeartContainerControl", 1)
+
+local cooldown = 0.43
+local lastPressAdd = 0
+local lastPressRemove = 0
+
+function MyMod:onUpdate()
+    local player = Isaac.GetPlayer(0)
+    local currentTime = Isaac.GetFrameCount() / 30
+
+    -- 1 tuşuna basıldığında (Kalp konteyneri ekleme)
+    if Input.IsButtonPressed(Keyboard.KEY_1, player.ControllerIndex) then
+        if currentTime - lastPressAdd >= cooldown then
+            player:AddMaxHearts(2, false) -- 1 tam kalp konteyneri (2 yarım kalp)
+            lastPressAdd = currentTime
+        end
+    end
+
+    -- 2 tuşuna basıldığında (Kalp konteyneri silme)
+    if Input.IsButtonPressed(Keyboard.KEY_2, player.ControllerIndex) then
+        if currentTime - lastPressRemove >= cooldown then
+            local maxHearts = player:GetMaxHearts()
+            if maxHearts > 2 then
+                player:AddMaxHearts(-2, false)
+            else
+                print("Kalp konteynerleri daha fazla azaltılamaz.")
+            end
+            lastPressRemove = currentTime
+        end
+    end
+end
+
+MyMod:AddCallback(ModCallbacks.MC_POST_UPDATE, MyMod.onUpdate)
